@@ -340,39 +340,172 @@ def eliminar_documento(col):
 
 
 # -----------------------------
+# REPORTES (AGGREGATION)
+# -----------------------------
+
+#MEJORES RESTAURANTES
+def mejores_restaurantes():
+
+    pipeline = [
+        {
+            "$group": {
+                "_id": "$restaurante_id",
+                "promedio_rating": {"$avg": "$rating"},
+                "total_resenas": {"$sum": 1}
+            }
+        },
+        {"$sort": {"promedio_rating": -1}}
+    ]
+
+    resultados = db.resenas.aggregate(pipeline)
+
+    print("\n--- Restaurantes mejor calificados ---\n")
+
+    for r in resultados:
+        print(r)
+
+#ARTICULOS MAS VENDIDOS
+def articulos_mas_vendidos():
+
+    pipeline = [
+        {"$unwind": "$items"},
+        {
+            "$group": {
+                "_id": "$items.articulo_id",
+                "total_vendidos": {"$sum": "$items.cantidad"}
+            }
+        },
+        {"$sort": {"total_vendidos": -1}}
+    ]
+
+    resultados = db.ordenes.aggregate(pipeline)
+
+    print("\n--- Articulos mas vendidos ---\n")
+
+    for r in resultados:
+        print(r)
+
+#VENTAS POR RESTAURANTE        
+def ventas_por_restaurante():
+
+    pipeline = [
+        {
+            "$group": {
+                "_id": "$restaurante_id",
+                "total_ventas": {"$sum": "$total"},
+                "ordenes": {"$sum": 1}
+            }
+        },
+        {"$sort": {"total_ventas": -1}}
+    ]
+
+    resultados = db.ordenes.aggregate(pipeline)
+
+    print("\n--- Ventas por restaurante ---\n")
+
+    for r in resultados:
+        print(r) 
+
+#RESEÑAS CON NOMBRE DE RESTAURANTE
+def resenas_con_restaurantes():
+
+    pipeline = [
+        {
+            "$lookup": {
+                "from": "restaurantes",
+                "localField": "restaurante_id",
+                "foreignField": "_id",
+                "as": "restaurante"
+            }
+        },
+        {"$unwind": "$restaurante"},
+        {
+            "$project": {
+                "rating": 1,
+                "comentario": 1,
+                "restaurante": "$restaurante.nombre"
+            }
+        }
+    ]
+
+    resultados = db.resenas.aggregate(pipeline)
+
+    print("\n--- Reseñas con restaurante ---\n")
+
+    for r in resultados:
+        print(r)
+
+# -----------------------------
+# MENU REPORTES
+# -----------------------------
+
+def menu_reportes():
+
+    while True:
+
+        print("\n--- REPORTES ---")
+        print("1 Restaurantes mejor calificados")
+        print("2 Articulos mas vendidos")
+        print("3 Ventas por restaurante")
+        print("4 Reseñas con restaurante")
+        print("0 Volver")
+
+        opcion = input("Seleccione una opcion: ")
+
+        if opcion == "1":
+            mejores_restaurantes()
+
+        elif opcion == "2":
+            articulos_mas_vendidos()
+
+        elif opcion == "3":
+            ventas_por_restaurante()
+
+        elif opcion == "4":
+            resenas_con_restaurantes()
+
+        elif opcion == "0":
+            break
+        
+# -----------------------------
 # MENU CRUD
 # -----------------------------
 
 def menu_crud(nombre_col):
 
     col = db[nombre_col]
+while True:
 
-    while True:
+        print("\n===== MENU =====")
+        print("1 Crear documento")
+        print("2 Leer documentos")
+        print("3 Actualizar documento")
+        print("4 Eliminar documento")
+        print("5 Reportes")
+        print("0 Salir")
 
-        print("\nCOLECCION:", nombre_col)
-
-        print("1 Crear")
-        print("2 Leer")
-        print("3 Actualizar")
-        print("4 Eliminar")
-        print("5 Volver")
-
-        opcion = validar_menu(["1", "2", "3", "4", "5"])
+        opcion = input("Seleccione una opcion: ")
 
         if opcion == "1":
-            crear_documento(col, nombre_col)
+            crear_documento()
 
         elif opcion == "2":
-            leer_documentos(col)
+            leer_documentos()
 
         elif opcion == "3":
-            actualizar_documento(col)
+            actualizar_documento()
 
         elif opcion == "4":
-            eliminar_documento(col)
+            eliminar_documento()
 
         elif opcion == "5":
+            menu_reportes()
+
+        elif opcion == "0":
             break
+
+        else:
+            print("Opcion invalida")
 
 
 # -----------------------------
@@ -383,7 +516,7 @@ def menu_principal():
 
     while True:
 
-        print("\n===== CRUD RESTAURANTES =====")
+        print("\n===== MENU PRINCIPAL =====")
 
         print("1 Usuarios")
         print("2 Restaurantes")
